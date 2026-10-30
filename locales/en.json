@@ -27,6 +27,7 @@
   "ADMIN_F_COORDS": "Place",
   "ADMIN_H_COORDS": "Stand at the counter.",
   "ADMIN_F_BLIP": "Show on the map",
+  "ADMIN_F_BLIP_STYLE": "Blip look",
   "ADMIN_C_PRICES": "What it buys",
   "ADMIN_C_PRICES_DESC": "Each item and the price paid per piece.",
   "ADMIN_F_ITEMS": "Items",

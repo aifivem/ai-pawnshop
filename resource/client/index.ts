@@ -1,78 +1,56 @@
 import {
   AdminWorld,
   cache,
+  callAction,
   input,
-  loadLocaleTexts,
   menu,
   nearestVehicle,
   notify,
-  player,
   Points,
   progress,
-  triggerServerCallback,
 } from "@aicore-fivem/lib/client";
-import { record } from "@aicore-fivem/lib/shared";
+import { readFinite, readId } from "@aicore-fivem/lib/shared";
 import { Locale } from "common";
 import { EVENTS, readShops, readYards, toOffers } from "common/pawn";
 
 const world = new AdminWorld(["shops", "scrapyards"]);
-const texts = loadLocaleTexts();
-const content = {
-  shops: readShops(world.get("shops")),
-  yards: readYards(world.get("scrapyards")),
-};
-const errorText = (v: unknown, fallback: string): string => {
-  const key =
-    typeof record(v).error === "string" ? String(record(v).error) : fallback;
-  return texts[key] ?? key;
-};
+const shops = world.view("shops", readShops);
+const yards = world.view("scrapyards", readYards);
+const FAR = { fallback: "PAWN_ERR_FAR" };
 
 /** Pawnshop and scrapyard points and blips, built again when the panel changes them. */
 const points = new Points();
 function rebuild(): void {
   points.clear();
-  for (const shop of content.shops.values())
+  for (const shop of shops.value.values())
     points.add(`shop:${shop.id}`, {
       ped: shop.ped ?? undefined,
       coords: shop.coords,
       label: Locale("PAWN_PROMPT_SHOP", shop.label),
       icon: "sack-dollar",
-      blip: shop.blip
-        ? { sprite: 431, color: 0, scale: 0.7, label: shop.label }
-        : undefined,
+      blip: shop.blip ? { ...shop.blipStyle, label: shop.label } : undefined,
       onPressed: () => pawn(shop.id, shop.label),
     });
-  for (const yard of content.yards.values())
+  for (const yard of yards.value.values())
     points.add(`yard:${yard.id}`, {
       coords: yard.coords,
       label: Locale("PAWN_PROMPT_YARD"),
       icon: "car-burst",
       radius: 10,
-      blip: yard.blip
-        ? { sprite: 380, color: 0, scale: 0.7, label: yard.label }
-        : undefined,
+      blip: yard.blip ? { ...yard.blipStyle, label: yard.label } : undefined,
       onPressed: () => scrap(yard.id),
     });
 }
 
 rebuild();
-world.onChange("shops", () => {
-  content.shops = readShops(world.get("shops"));
-  rebuild();
-});
-world.onChange("scrapyards", () => {
-  content.yards = readYards(world.get("scrapyards"));
-  rebuild();
-});
+world.onChange("shops", rebuild);
+world.onChange("scrapyards", rebuild);
 
 /** Sell menu: one snapshot of what the shop buys from the player, then sell and ask again. */
 async function pawn(shopId: string, title: string): Promise<void> {
   for (;;) {
-    const result = record(
-      await triggerServerCallback(EVENTS.offers, [shopId]).catch(() => null),
-    );
-    if (result.ok !== true)
-      return notify(errorText(result, "PAWN_ERR_FAR"), "error");
+    const result = await callAction(EVENTS.offers, [shopId], FAR);
+    if (!result) return;
     const offers = toOffers(result.offers);
     if (offers.length === 0) return notify(Locale("PAWN_NOTHING"), "info");
     const pick = await menu({
@@ -101,14 +79,7 @@ async function pawn(shopId: string, title: string): Promise<void> {
     });
     const count = Math.floor(Number(values?.count));
     if (!values || !(count >= 1 && count <= offer.count)) continue;
-    const sold = record(
-      await triggerServerCallback(EVENTS.sell, [
-        shopId,
-        offer.name,
-        count,
-      ]).catch(() => null),
-    );
-    if (sold.ok !== true) notify(errorText(sold, "PAWN_ERR_FAR"), "error");
+    await callAction(EVENTS.sell, [shopId, offer.name, count], FAR);
   }
 }
 
@@ -121,29 +92,20 @@ function vehicleNearby(): number | null {
 async function scrap(yardId: string): Promise<void> {
   const vehicle = vehicleNearby();
   if (vehicle === null) return notify(Locale("PAWN_ERR_NO_VEHICLE"), "warning");
-  const started = record(
-    await triggerServerCallback(EVENTS.scrapStart, [
-      yardId,
-      VehToNet(vehicle),
-    ]).catch(() => null),
+  const started = await callAction(
+    EVENTS.scrapStart,
+    [yardId, VehToNet(vehicle)],
+    FAR,
   );
-  if (
-    started.ok !== true ||
-    typeof started.token !== "number" ||
-    typeof started.seconds !== "number"
-  )
-    return notify(errorText(started, "PAWN_ERR_FAR"), "error");
+  const token = readId(started?.token);
+  const seconds = readFinite(started?.seconds);
+  if (token === null || seconds === null) return;
   TaskTurnPedToFaceEntity(cache.ped, vehicle, 1000);
   const done = await progress({
     label: Locale("PAWN_SCRAPPING"),
-    duration: started.seconds * 1000,
+    duration: seconds * 1000,
     anim: { dict: "mini@repair", clip: "fixing_a_player" },
   });
   if (!done) return;
-  const result = record(
-    await triggerServerCallback(EVENTS.scrapFinish, [started.token]).catch(
-      () => null,
-    ),
-  );
-  if (result.ok !== true) notify(errorText(result, "PAWN_ERR_FAR"), "error");
+  await callAction(EVENTS.scrapFinish, [token], FAR);
 }

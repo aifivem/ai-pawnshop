@@ -1,7 +1,17 @@
 import { PLACE_PED_SPEC, placePedFields } from "@aicore-fivem/lib/shared";
 import type { PanelSchema } from "@aicore-fivem/shared";
+import { SHOP_BLIP, YARD_BLIP } from "common/pawn";
 
 const KEY = "^[a-z0-9_]{2,48}$";
+const BLIP_STYLE = {
+  type: "object" as const,
+  optional: true,
+  fields: {
+    sprite: { type: "number" as const, min: 0, max: 1000, integer: true },
+    color: { type: "number" as const, min: 0, max: 100, integer: true },
+    scale: { type: "number" as const, min: 0.3, max: 2 },
+  },
+};
 
 /** ai-pawnshop's panel: pawnshops and what they pay, scrapyards and what a vehicle gives. */
 export const pawnSchema: PanelSchema = {
@@ -25,6 +35,7 @@ export const pawnSchema: PanelSchema = {
         label: "",
         coords: { x: 0, y: 0, z: 0 },
         blip: true,
+        blipStyle: SHOP_BLIP,
         items: [],
       },
       sections: {
@@ -32,6 +43,7 @@ export const pawnSchema: PanelSchema = {
         label: { type: "text", min: 1, max: 48 },
         coords: { type: "vec3" },
         blip: { type: "bool" },
+        blipStyle: BLIP_STYLE,
         items: {
           type: "list",
           max: 100,
@@ -59,12 +71,14 @@ export const pawnSchema: PanelSchema = {
         label: "",
         coords: { x: 0, y: 0, z: 0 },
         blip: true,
+        blipStyle: YARD_BLIP,
         rewards: [],
       },
       sections: {
         label: { type: "text", min: 1, max: 48 },
         coords: { type: "vec3" },
         blip: { type: "bool" },
+        blipStyle: BLIP_STYLE,
         rewards: {
           type: "list",
           max: 20,
@@ -116,6 +130,7 @@ export const pawnSchema: PanelSchema = {
               ground: true,
             },
             { widget: "switch", path: "blip", label: "ADMIN_F_BLIP" },
+            { widget: "blip", path: "blipStyle", label: "ADMIN_F_BLIP_STYLE" },
           ],
         },
         {
@@ -187,6 +202,7 @@ export const pawnSchema: PanelSchema = {
               ground: true,
             },
             { widget: "switch", path: "blip", label: "ADMIN_F_BLIP" },
+            { widget: "blip", path: "blipStyle", label: "ADMIN_F_BLIP_STYLE" },
           ],
         },
         {

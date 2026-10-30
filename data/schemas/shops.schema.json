@@ -91,6 +91,32 @@
           "description": "Show on the map",
           "type": "boolean"
         },
+        "blipStyle": {
+          "description": "Blip look",
+          "type": "object",
+          "properties": {
+            "sprite": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "color": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "scale": {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 2
+            }
+          },
+          "required": [
+            "sprite",
+            "color",
+            "scale"
+          ]
+        },
         "items": {
           "description": "Items",
           "type": "array",

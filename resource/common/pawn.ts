@@ -28,6 +28,22 @@ const point = (v: unknown): Point => {
 };
 const list = (v: unknown) => (Array.isArray(v) ? v.map(record) : []);
 
+export interface BlipStyle {
+  sprite: number;
+  color: number;
+  scale: number;
+}
+export const SHOP_BLIP: BlipStyle = { sprite: 431, color: 0, scale: 0.7 };
+export const YARD_BLIP: BlipStyle = { sprite: 380, color: 0, scale: 0.7 };
+const blipStyle = (v: unknown, d: BlipStyle): BlipStyle => {
+  const b = record(v);
+  return {
+    sprite: int(b.sprite, d.sprite, 0, 1000),
+    color: int(b.color, d.color, 0, 100),
+    scale: num(b.scale, d.scale, 0.3, 2),
+  };
+};
+
 export interface Settings {
   account: string;
   /** Minutes between two vehicles one player scraps. */
@@ -51,6 +67,7 @@ export interface Shop {
   label: string;
   coords: Point;
   blip: boolean;
+  blipStyle: BlipStyle;
   /** Item -> dollars paid per piece. */
   prices: Map<string, number>;
 }
@@ -69,6 +86,7 @@ export function readShops(raw: unknown): Map<string, Shop> {
       label: str(v.label, id, 48),
       coords: point(v.coords),
       blip: bool(v.blip, true),
+      blipStyle: blipStyle(v.blipStyle, SHOP_BLIP),
       prices,
     });
   }
@@ -80,6 +98,7 @@ export interface Yard {
   label: string;
   coords: Point;
   blip: boolean;
+  blipStyle: BlipStyle;
   rewards: Array<{ name: string; min: number; max: number }>;
 }
 
@@ -99,6 +118,7 @@ export function readYards(raw: unknown): Map<string, Yard> {
       label: str(v.label, id, 48),
       coords: point(v.coords),
       blip: bool(v.blip, true),
+      blipStyle: blipStyle(v.blipStyle, YARD_BLIP),
       rewards,
     });
   }
