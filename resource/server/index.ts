@@ -1,4 +1,4 @@
-import { AdminPanel, aiLog, aiLogChannels, notify, onClientCallback, optionalExport, resourceExport } from "@aicore-fivem/lib/server";
+import { AdminPanel, aiLog, aiLogChannels, inventory, notify, onClientCallback, optionalExport, resourceExport } from "@aicore-fivem/lib/server";
 import { asArgs } from "@aicore-fivem/lib/shared";
 import { Locale } from "common";
 import { EVENTS, readSettings, readShops, readYards, type Offer } from "common/pawn";
@@ -24,7 +24,7 @@ onClientCallback(EVENTS.offers, { args: ([id]) => asArgs(typeof id === "string" 
   const shop = content.shops.get(id);
   if (!shop || !near(source, shop.coords, 3)) return fail("PAWN_ERR_FAR");
   const offers = new Map<string, Offer>();
-  for (const stack of optionalExport("ai-inventory")?.GetItems(source) ?? []) {
+  for (const stack of inventory.getItems(source)) {
     const price = shop.prices.get(stack.name);
     if (price === undefined) continue;
     const offer = offers.get(stack.name) ?? { name: stack.name, label: stack.label, count: 0, price };
@@ -46,7 +46,7 @@ onClientCallback(
     if (!shop || !near(source, shop.coords, 3)) return fail("PAWN_ERR_FAR");
     const price = shop.prices.get(item);
     if (price === undefined) return fail("PAWN_ERR_NOT_BUYING");
-    if (!optionalExport("ai-inventory")?.RemoveItem(source, item, count)) return fail("PAWN_ERR_COUNT");
+    if (!inventory.removeItem(source, item, count)) return fail("PAWN_ERR_COUNT");
     const total = price * count;
     if (total > 0) core.AddMoney(source, content.settings.account, total, `pawn:${shop.id}`);
     notify(source, Locale("PAWN_SOLD", count, total), "success");
@@ -88,10 +88,9 @@ onClientCallback(EVENTS.scrapFinish, { args: ([token]) => asArgs(typeof token ==
   if (GetPedInVehicleSeat(scrap.vehicle, -1) !== 0) return fail("PAWN_ERR_EMPTY_IT");
   DeleteEntity(scrap.vehicle);
   nextScrap.set(source, Date.now() + content.settings.scrapCooldown * 60_000);
-  const inventory = optionalExport("ai-inventory");
   for (const reward of yard.rewards) {
     const count = reward.min + Math.floor(Math.random() * (reward.max - reward.min + 1));
-    if (count > 0) inventory?.AddItem(source, reward.name, count);
+    if (count > 0) inventory.addItem(source, reward.name, count);
   }
   notify(source, Locale("PAWN_SCRAPPED"), "success");
   aiLog("scrap", "scrapped a vehicle", { source, metadata: { yard: yard.id } });
