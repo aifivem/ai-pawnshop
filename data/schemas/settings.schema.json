@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ai-pawnshop/data/settings.json",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "This file's JSON Schema (for editors)."
+    },
+    "account": {
+      "description": "Money account: Sales are paid into this account.",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 32
+    },
+    "scrapCooldown": {
+      "description": "Wait between vehicles: How long one player waits before scrapping the next vehicle.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1440
+    },
+    "scrapSeconds": {
+      "description": "Time per vehicle",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 600
+    }
+  },
+  "required": [
+    "account",
+    "scrapCooldown",
+    "scrapSeconds"
+  ]
+}

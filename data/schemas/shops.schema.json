@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ai-pawnshop/data/shops.json",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "This file's JSON Schema (for editors)."
+    }
+  },
+  "patternProperties": {
+    "^[a-z0-9_]{2,32}$": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "Name",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "coords": {
+          "description": "Place: Stand at the counter.",
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "z"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            }
+          }
+        },
+        "blip": {
+          "description": "Show on the map",
+          "type": "boolean"
+        },
+        "items": {
+          "description": "Items",
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "Item",
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 48,
+                "pattern": "^[a-z0-9_]{2,48}$"
+              },
+              "price": {
+                "description": "Price",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000000
+              }
+            },
+            "required": [
+              "name",
+              "price"
+            ]
+          }
+        }
+      },
+      "required": [
+        "label",
+        "coords",
+        "blip",
+        "items"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

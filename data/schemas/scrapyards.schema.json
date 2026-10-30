@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ai-pawnshop/data/scrapyards.json",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "This file's JSON Schema (for editors)."
+    }
+  },
+  "patternProperties": {
+    "^[a-z0-9_]{2,32}$": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "Name",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "coords": {
+          "description": "Place: The middle of the yard; vehicles within 12 m count.",
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "z"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            }
+          }
+        },
+        "blip": {
+          "description": "Show on the map",
+          "type": "boolean"
+        },
+        "rewards": {
+          "description": "Materials",
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "Item",
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 48,
+                "pattern": "^[a-z0-9_]{2,48}$"
+              },
+              "min": {
+                "description": "From",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "max": {
+                "description": "Up to",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "name",
+              "min",
+              "max"
+            ]
+          }
+        }
+      },
+      "required": [
+        "label",
+        "coords",
+        "blip",
+        "rewards"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

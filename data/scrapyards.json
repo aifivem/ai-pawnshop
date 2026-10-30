@@ -1,4 +1,5 @@
 {
+  "$schema": "./schemas/scrapyards.schema.json",
   "scrap_sandy": {
     "label": "Sandy Shores Scrap Yard",
     "coords": {

@@ -1,4 +1,5 @@
 {
+  "$schema": "./schemas/shops.schema.json",
   "pawn_vinewood": {
     "label": "Vinewood Pawn & Jewelry",
     "coords": {
