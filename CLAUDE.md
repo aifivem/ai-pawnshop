@@ -1,6 +1,6 @@
 # ai-pawnshop
 
-Pawnshops that buy items at panel prices, and scrapyards that take unregistered vehicles apart for materials. Depends on ai-core (money, menu, input, prompts, progress); uses the active inventory through ai-core's inventory layer (lib `inventory`) and ai-vehicles (owned check). Research: `docs/research/ai-pawnshop.md`.
+Pawnshops that buy items at panel prices, and scrapyards that take unregistered vehicles apart for materials. Depends on ai-core (money, menu, input, prompts, progress); uses the active inventory through ai-core's inventory layer (lib `inventory`) and ai-vehicles (owned check).
 
 ## Decisions
 
