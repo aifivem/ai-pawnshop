@@ -1,4 +1,4 @@
-import { bool, int, num, record, str } from "@aicore-fivem/lib/shared";
+import { bool, int, num, record, str, readPlacePed, type PlacePed } from "@aicore-fivem/lib/shared";
 
 /** ai-pawnshop's contracts and panel content. No natives. */
 
@@ -37,6 +37,8 @@ export function readSettings(raw: unknown): Settings {
 }
 
 export interface Shop {
+  /** NPC standing at the place (panel), null for none. */
+  ped: PlacePed | null;
   id: string;
   label: string;
   coords: Point;
@@ -54,6 +56,7 @@ export function readShops(raw: unknown): Map<string, Shop> {
       if (typeof row.name === "string")
         prices.set(row.name, int(row.price, 0, 0));
     out.set(id, {
+      ped: readPlacePed(v.ped),
       id,
       label: str(v.label, id, 48),
       coords: point(v.coords),
