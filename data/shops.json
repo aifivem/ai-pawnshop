@@ -25,5 +25,20 @@
         "price": 900
       }
     ]
+  },
+  "diving_delperro": {
+    "label": "Del Perro Diving Shop",
+    "coords": {
+      "x": -1684.13,
+      "y": -1068.91,
+      "z": 13.15
+    },
+    "blip": false,
+    "items": [
+      {
+        "name": "coral",
+        "price": 75
+      }
+    ]
   }
 }
