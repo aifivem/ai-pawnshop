@@ -1,0 +1,38 @@
+{
+  "scrap_sandy": {
+    "label": "Sandy Shores Scrap Yard",
+    "coords": {
+      "x": 2351.5,
+      "y": 3132.96,
+      "z": 48.2
+    },
+    "blip": true,
+    "rewards": [
+      {
+        "name": "scrapmetal",
+        "min": 4,
+        "max": 10
+      },
+      {
+        "name": "plastic",
+        "min": 2,
+        "max": 6
+      },
+      {
+        "name": "copper",
+        "min": 1,
+        "max": 4
+      },
+      {
+        "name": "steel",
+        "min": 1,
+        "max": 4
+      },
+      {
+        "name": "glass",
+        "min": 1,
+        "max": 4
+      }
+    ]
+  }
+}

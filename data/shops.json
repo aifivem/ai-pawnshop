@@ -1,0 +1,29 @@
+{
+  "pawn_vinewood": {
+    "label": "Vinewood Pawn & Jewelry",
+    "coords": {
+      "x": 412.34,
+      "y": 314.81,
+      "z": 103.13
+    },
+    "blip": true,
+    "items": [
+      {
+        "name": "rolex",
+        "price": 180
+      },
+      {
+        "name": "goldchain",
+        "price": 120
+      },
+      {
+        "name": "diamond_ring",
+        "price": 250
+      },
+      {
+        "name": "goldbar",
+        "price": 900
+      }
+    ]
+  }
+}

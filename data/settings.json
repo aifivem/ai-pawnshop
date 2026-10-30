@@ -1,0 +1,5 @@
+{
+  "account": "cash",
+  "scrapCooldown": 15,
+  "scrapSeconds": 30
+}
