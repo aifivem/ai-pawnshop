@@ -2,10 +2,11 @@ import {
   bool,
   int,
   num,
+  type PlacePed,
+  readBlipStyle,
+  readPlacePed,
   record,
   str,
-  readPlacePed,
-  type PlacePed,
 } from "@aicore-fivem/lib/shared";
 
 /** ai-pawnshop's contracts and panel content. No natives. */
@@ -37,11 +38,7 @@ export const SHOP_BLIP: BlipStyle = { sprite: 431, color: 0, scale: 0.7 };
 export const YARD_BLIP: BlipStyle = { sprite: 380, color: 0, scale: 0.7 };
 const blipStyle = (v: unknown, d: BlipStyle): BlipStyle => {
   const b = record(v);
-  return {
-    sprite: int(b.sprite, d.sprite, 0, 1000),
-    color: int(b.color, d.color, 0, 100),
-    scale: num(b.scale, d.scale, 0.3, 2),
-  };
+  return readBlipStyle(b, { sprite: d.sprite, color: d.color, scale: d.scale });
 };
 
 export interface Settings {

@@ -1,4 +1,8 @@
-import { PLACE_PED_SPEC, placePedFields } from "@aicore-fivem/lib/shared";
+import {
+  BLIP_STYLE_FIELDS,
+  PLACE_PED_SPEC,
+  placePedFields,
+} from "@aicore-fivem/lib/shared";
 import type { PanelSchema } from "@aicore-fivem/shared";
 import { SHOP_BLIP, YARD_BLIP } from "common/pawn";
 
@@ -6,11 +10,7 @@ const KEY = "^[a-z0-9_]{2,48}$";
 const BLIP_STYLE = {
   type: "object" as const,
   optional: true,
-  fields: {
-    sprite: { type: "number" as const, min: 0, max: 1000, integer: true },
-    color: { type: "number" as const, min: 0, max: 100, integer: true },
-    scale: { type: "number" as const, min: 0.3, max: 2 },
-  },
+  fields: BLIP_STYLE_FIELDS,
 };
 
 /** ai-pawnshop's panel: pawnshops and what they pay, scrapyards and what a vehicle gives. */
