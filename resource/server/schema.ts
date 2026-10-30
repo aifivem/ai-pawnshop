@@ -1,6 +1,6 @@
-import type { PanelSchema } from "@aicore-fivem/shared"
+import type { PanelSchema } from "@aicore-fivem/shared";
 
-const KEY = "^[a-z0-9_]{2,48}$"
+const KEY = "^[a-z0-9_]{2,48}$";
 
 /** ai-pawnshop's panel: pawnshops and what they pay, scrapyards and what a vehicle gives. */
 export const pawnSchema: PanelSchema = {
@@ -263,4 +263,4 @@ export const pawnSchema: PanelSchema = {
       ],
     },
   ],
-}
+};
