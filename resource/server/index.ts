@@ -5,6 +5,7 @@ import {
   entityCoords,
   inventory,
   isNear,
+  KeyedCooldowns,
   notify,
   onClientCallback,
   online,
@@ -96,20 +97,8 @@ onClientCallback(
 /** Vehicles being taken apart (one per player, token + 80% of the time). */
 const scraps = new PendingActions<{ yard: string; vehicle: number }>();
 
-/**
- * When each character may scrap again (Date.now), kept by character id so a reconnect does not reset it; expired
- * entries are dropped on the next start.
- */
-const nextScrap = new Map<number, number>();
-function cooldownLeft(charId: number): number {
-  const until = nextScrap.get(charId) ?? 0;
-  return Math.max(0, until - Date.now());
-}
-function startCooldown(charId: number, ms: number): void {
-  const now = Date.now();
-  for (const [id, until] of nextScrap) if (until <= now) nextScrap.delete(id);
-  if (ms > 0) nextScrap.set(charId, now + ms);
-}
+/** When each character may scrap again, by character id so a reconnect does not reset it. */
+const scrapCooldowns = new KeyedCooldowns();
 
 /** Population type of script vehicles (server-created: rentals, job and service cars, owned cars, the armored truck). */
 const POPTYPE_MISSION = 7;
@@ -138,7 +127,7 @@ onClientCallback(
     const charId = online.character(source)?.id;
     if (!yard || charId === undefined || !isNear(source, yard.coords, 12))
       return fail("PAWN_ERR_FAR");
-    if (cooldownLeft(charId) > 0) return fail("PAWN_ERR_COOLDOWN");
+    if (!scrapCooldowns.ready(charId)) return fail("PAWN_ERR_COOLDOWN");
     const vehicle = vehicleNearPlayer(source, netId, { metres: 6 });
     if (!vehicle) return fail("PAWN_ERR_NO_VEHICLE");
     if (
@@ -173,7 +162,7 @@ onClientCallback(
     if (GetPedInVehicleSeat(scrap.vehicle, -1) !== 0)
       return fail("PAWN_ERR_EMPTY_IT");
     DeleteEntity(scrap.vehicle);
-    startCooldown(charId, settings.value.scrapCooldown * 60_000);
+    scrapCooldowns.start(charId, settings.value.scrapCooldown * 60_000);
     for (const reward of yard.rewards) {
       const count =
         reward.min + Math.floor(Math.random() * (reward.max - reward.min + 1));
