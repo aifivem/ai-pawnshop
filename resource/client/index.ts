@@ -1,4 +1,4 @@
-import { AdminWorld, cache, hidePrompt, input, loadLocaleTexts, menu, notify, onPromptPressed, progress, showPrompt, triggerServerCallback, Zones } from "@aicore-fivem/lib/client";
+import { AdminWorld, cache, input, loadLocaleTexts, menu, notify, player, Points, progress, triggerServerCallback } from "@aicore-fivem/lib/client";
 import { record } from "@aicore-fivem/lib/shared";
 import { Locale } from "common";
 import { EVENTS, readShops, readYards, toOffers } from "common/pawn";
@@ -6,50 +6,42 @@ import { EVENTS, readShops, readYards, toOffers } from "common/pawn";
 const world = new AdminWorld(["shops", "scrapyards"]);
 const texts = loadLocaleTexts();
 const content = { shops: readShops(world.get("shops")), yards: readYards(world.get("scrapyards")) };
-const BLIP_TEXT = "AIPAWN_BLIP";
-AddTextEntry(BLIP_TEXT, "~a~");
 const errorText = (v: unknown, fallback: string): string => {
   const key = typeof record(v).error === "string" ? String(record(v).error) : fallback;
   return texts[key] ?? key;
 };
 
-/** Pawnshop and scrapyard prompts and blips, built again when the panel changes them. */
-class Places {
-  private readonly zones = new Zones();
-  private blips: number[] = [];
-  busy = false;
-
-  rebuild(): void {
-    this.zones.clear();
-    for (const blip of this.blips) RemoveBlip(blip);
-    this.blips = [];
-    for (const shop of content.shops.values()) this.add(`shop:${shop.id}`, shop.coords, 2, Locale("PAWN_PROMPT_SHOP", shop.label), shop.blip ? 431 : 0, shop.label);
-    for (const yard of content.yards.values()) this.add(`yard:${yard.id}`, yard.coords, 10, Locale("PAWN_PROMPT_YARD"), yard.blip ? 380 : 0, yard.label);
-  }
-
-  private add(id: string, center: { x: number; y: number; z: number }, radius: number, label: string, sprite: number, name: string): void {
-    this.zones.add(id, { shape: { type: "sphere", center, radius }, interval: 500, onEnter: () => showPrompt(id, label), onExit: () => hidePrompt(id) });
-    if (!sprite) return;
-    const blip = AddBlipForCoord(center.x, center.y, center.z);
-    SetBlipSprite(blip, sprite);
-    SetBlipScale(blip, 0.7);
-    SetBlipAsShortRange(blip, true);
-    BeginTextCommandSetBlipName(BLIP_TEXT);
-    AddTextComponentSubstringPlayerName(name);
-    EndTextCommandSetBlipName(blip);
-    this.blips.push(blip);
-  }
+/** Pawnshop and scrapyard points and blips, built again when the panel changes them. */
+const points = new Points();
+function rebuild(): void {
+  points.clear();
+  for (const shop of content.shops.values())
+    points.add(`shop:${shop.id}`, {
+      coords: shop.coords,
+      label: Locale("PAWN_PROMPT_SHOP", shop.label),
+      icon: "sack-dollar",
+      blip: shop.blip ? { sprite: 431, color: 0, scale: 0.7, label: shop.label } : undefined,
+      onPressed: () => pawn(shop.id, shop.label),
+    });
+  for (const yard of content.yards.values())
+    points.add(`yard:${yard.id}`, {
+      coords: yard.coords,
+      label: Locale("PAWN_PROMPT_YARD"),
+      icon: "car-burst",
+      radius: 10,
+      blip: yard.blip ? { sprite: 380, color: 0, scale: 0.7, label: yard.label } : undefined,
+      onPressed: () => scrap(yard.id),
+    });
 }
 
-const places = new Places();
-places.rebuild();
+rebuild();
 world.onChange("shops", () => {
   content.shops = readShops(world.get("shops"));
-  places.rebuild();
+  rebuild();
 });
 world.onChange("scrapyards", () => {
   content.yards = readYards(world.get("scrapyards"));
-  places.rebuild();
+  rebuild();
 });
 
 /** Sell menu: one snapshot of what the shop buys from the player, then sell and ask again. */
@@ -73,7 +65,7 @@ async function pawn(shopId: string, title: string): Promise<void> {
 /** The closest vehicle within 6 m of the player, on foot. */
 function vehicleNearby(): number | null {
   if (cache.vehicle !== false) return null;
-  const [x = 0, y = 0, z = 0] = GetEntityCoords(cache.ped, false);
+  const { x, y, z } = player.coords();
   const vehicle = GetClosestVehicle(x, y, z, 6, 0, 70);
   return vehicle && DoesEntityExist(vehicle) ? vehicle : null;
 }
@@ -89,13 +81,3 @@ async function scrap(yardId: string): Promise<void> {
   const result = record(await triggerServerCallback(EVENTS.scrapFinish, [started.token]).catch(() => null));
   if (result.ok !== true) notify(errorText(result, "PAWN_ERR_FAR"), "error");
 }
-
-onPromptPressed((id) => {
-  if (places.busy) return;
-  const [kind, key = ""] = id.split(":");
-  const shop = content.shops.get(key);
-  const run = kind === "shop" && shop ? pawn(key, shop.label) : kind === "yard" && content.yards.has(key) ? scrap(key) : null;
-  if (!run) return;
-  places.busy = true;
-  void run.finally(() => (places.busy = false));
-});

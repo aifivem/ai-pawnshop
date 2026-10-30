@@ -6,7 +6,7 @@ Pawnshops that buy items at panel prices, and scrapyards that take unregistered 
 
 - The sell menu takes one snapshot of the shop's offers per open (`offers`), sales return `{ ok }` and the menu asks again.
 - Scrapping is the two-step timed action (token, 80% time check); the vehicle is deleted on the server.
-- Settings (account, scrap time and cooldown) stay server-only; shops and yards are `sync: "all"` for prompts and blips.
+- Settings (account, scrap time and cooldown) stay server-only; shops and yards are `sync: "all"` for the points and blips.
 
 ## Contracts
 
@@ -14,4 +14,4 @@ Pawnshops that buy items at panel prices, and scrapyards that take unregistered 
 
 ## Entry points
 
-- Sales and scrapping `resource/server/index.ts`; menus and prompts `resource/client/index.ts`.
+- Sales and scrapping `resource/server/index.ts`; menus and interaction points (lib `Points` with blips) `resource/client/index.ts`.
