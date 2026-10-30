@@ -4,6 +4,7 @@ import {
   input,
   loadLocaleTexts,
   menu,
+  nearestVehicle,
   notify,
   player,
   Points,
@@ -114,9 +115,7 @@ async function pawn(shopId: string, title: string): Promise<void> {
 /** The closest vehicle within 6 m of the player, on foot. */
 function vehicleNearby(): number | null {
   if (cache.vehicle !== false) return null;
-  const { x, y, z } = player.coords();
-  const vehicle = GetClosestVehicle(x, y, z, 6, 0, 70);
-  return vehicle && DoesEntityExist(vehicle) ? vehicle : null;
+  return nearestVehicle(6) || null;
 }
 
 async function scrap(yardId: string): Promise<void> {
