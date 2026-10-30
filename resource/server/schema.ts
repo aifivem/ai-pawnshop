@@ -1,6 +1,6 @@
-import type { PanelSchema } from "@aicore-fivem/shared";
+import type { PanelSchema } from "@aicore-fivem/shared"
 
-const KEY = "^[a-z0-9_]{2,48}$";
+const KEY = "^[a-z0-9_]{2,48}$"
 
 /** ai-pawnshop's panel: pawnshops and what they pay, scrapyards and what a vehicle gives. */
 export const pawnSchema: PanelSchema = {
@@ -20,19 +20,45 @@ export const pawnSchema: PanelSchema = {
       kind: "records",
       sync: "all",
       labelPath: "label",
-      newRecord: { label: "", coords: { x: 0, y: 0, z: 0 }, blip: true, items: [] },
+      newRecord: {
+        label: "",
+        coords: { x: 0, y: 0, z: 0 },
+        blip: true,
+        items: [],
+      },
       sections: {
         label: { type: "text", min: 1, max: 48 },
         coords: { type: "vec3" },
         blip: { type: "bool" },
-        items: { type: "list", max: 100, of: { type: "object", fields: { name: { type: "text", lookup: "item", min: 2, max: 48, pattern: KEY }, price: { type: "number", min: 0, max: 10_000_000, integer: true } } } },
+        items: {
+          type: "list",
+          max: 100,
+          of: {
+            type: "object",
+            fields: {
+              name: {
+                type: "text",
+                lookup: "item",
+                min: 2,
+                max: 48,
+                pattern: KEY,
+              },
+              price: { type: "number", min: 0, max: 10_000_000, integer: true },
+            },
+          },
+        },
       },
     },
     scrapyards: {
       kind: "records",
       sync: "all",
       labelPath: "label",
-      newRecord: { label: "", coords: { x: 0, y: 0, z: 0 }, blip: true, rewards: [] },
+      newRecord: {
+        label: "",
+        coords: { x: 0, y: 0, z: 0 },
+        blip: true,
+        rewards: [],
+      },
       sections: {
         label: { type: "text", min: 1, max: 48 },
         coords: { type: "vec3" },
@@ -40,7 +66,20 @@ export const pawnSchema: PanelSchema = {
         rewards: {
           type: "list",
           max: 20,
-          of: { type: "object", fields: { name: { type: "text", lookup: "item", min: 2, max: 48, pattern: KEY }, min: { type: "number", min: 0, max: 100, integer: true }, max: { type: "number", min: 0, max: 100, integer: true } } },
+          of: {
+            type: "object",
+            fields: {
+              name: {
+                type: "text",
+                lookup: "item",
+                min: 2,
+                max: 48,
+                pattern: KEY,
+              },
+              min: { type: "number", min: 0, max: 100, integer: true },
+              max: { type: "number", min: 0, max: 100, integer: true },
+            },
+          },
         },
       },
     },
@@ -60,8 +99,20 @@ export const pawnSchema: PanelSchema = {
           title: "ADMIN_C_SHOP",
           desc: "ADMIN_C_SHOP_DESC",
           fields: [
-            { widget: "text", path: "label", suggest: { from: "coords" }, label: "ADMIN_F_LABEL", placeholder: "ADMIN_P_LABEL" },
-            { widget: "point", path: "coords", label: "ADMIN_F_COORDS", hint: "ADMIN_H_COORDS", ground: true },
+            {
+              widget: "text",
+              path: "label",
+              suggest: { from: "coords" },
+              label: "ADMIN_F_LABEL",
+              placeholder: "ADMIN_P_LABEL",
+            },
+            {
+              widget: "point",
+              path: "coords",
+              label: "ADMIN_F_COORDS",
+              hint: "ADMIN_H_COORDS",
+              ground: true,
+            },
             { widget: "switch", path: "blip", label: "ADMIN_F_BLIP" },
           ],
         },
@@ -78,8 +129,21 @@ export const pawnSchema: PanelSchema = {
               max: 100,
               newRow: { name: "rolex", price: 100 },
               rows: [
-                { widget: "text", lookup: "item", path: "name", label: "ADMIN_F_ITEM", placeholder: "ADMIN_P_ITEM" },
-                { widget: "number", path: "price", label: "ADMIN_F_PRICE", min: 0, max: 10_000_000, unit: "$" },
+                {
+                  widget: "text",
+                  lookup: "item",
+                  path: "name",
+                  label: "ADMIN_F_ITEM",
+                  placeholder: "ADMIN_P_ITEM",
+                },
+                {
+                  widget: "number",
+                  path: "price",
+                  label: "ADMIN_F_PRICE",
+                  min: 0,
+                  max: 10_000_000,
+                  unit: "$",
+                },
               ],
             },
           ],
@@ -100,8 +164,20 @@ export const pawnSchema: PanelSchema = {
           title: "ADMIN_C_YARD",
           desc: "ADMIN_C_YARD_DESC",
           fields: [
-            { widget: "text", path: "label", suggest: { from: "coords" }, label: "ADMIN_F_LABEL", placeholder: "ADMIN_P_YARD_LABEL" },
-            { widget: "point", path: "coords", label: "ADMIN_F_COORDS", hint: "ADMIN_H_YARD_COORDS", ground: true },
+            {
+              widget: "text",
+              path: "label",
+              suggest: { from: "coords" },
+              label: "ADMIN_F_LABEL",
+              placeholder: "ADMIN_P_YARD_LABEL",
+            },
+            {
+              widget: "point",
+              path: "coords",
+              label: "ADMIN_F_COORDS",
+              hint: "ADMIN_H_YARD_COORDS",
+              ground: true,
+            },
             { widget: "switch", path: "blip", label: "ADMIN_F_BLIP" },
           ],
         },
@@ -118,9 +194,27 @@ export const pawnSchema: PanelSchema = {
               max: 20,
               newRow: { name: "scrapmetal", min: 1, max: 5 },
               rows: [
-                { widget: "text", lookup: "item", path: "name", label: "ADMIN_F_ITEM", placeholder: "ADMIN_P_REWARD" },
-                { widget: "number", path: "min", label: "ADMIN_F_MIN", min: 0, max: 100 },
-                { widget: "number", path: "max", label: "ADMIN_F_MAX", min: 0, max: 100 },
+                {
+                  widget: "text",
+                  lookup: "item",
+                  path: "name",
+                  label: "ADMIN_F_ITEM",
+                  placeholder: "ADMIN_P_REWARD",
+                },
+                {
+                  widget: "number",
+                  path: "min",
+                  label: "ADMIN_F_MIN",
+                  min: 0,
+                  max: 100,
+                },
+                {
+                  widget: "number",
+                  path: "max",
+                  label: "ADMIN_F_MAX",
+                  min: 0,
+                  max: 100,
+                },
               ],
             },
           ],
@@ -139,12 +233,34 @@ export const pawnSchema: PanelSchema = {
           title: "ADMIN_C_SETTINGS",
           desc: "ADMIN_C_SETTINGS_DESC",
           fields: [
-            { widget: "text", lookup: "account", path: "account", label: "ADMIN_F_ACCOUNT", hint: "ADMIN_H_ACCOUNT", placeholder: "ADMIN_P_ACCOUNT" },
-            { widget: "number", path: "scrapSeconds", label: "ADMIN_F_SCRAP_SECONDS", min: 1, max: 600, unit: "s" },
-            { widget: "number", path: "scrapCooldown", label: "ADMIN_F_SCRAP_COOLDOWN", hint: "ADMIN_H_SCRAP_COOLDOWN", min: 0, max: 1440, unit: "min" },
+            {
+              widget: "text",
+              lookup: "account",
+              path: "account",
+              label: "ADMIN_F_ACCOUNT",
+              hint: "ADMIN_H_ACCOUNT",
+              placeholder: "ADMIN_P_ACCOUNT",
+            },
+            {
+              widget: "number",
+              path: "scrapSeconds",
+              label: "ADMIN_F_SCRAP_SECONDS",
+              min: 1,
+              max: 600,
+              unit: "s",
+            },
+            {
+              widget: "number",
+              path: "scrapCooldown",
+              label: "ADMIN_F_SCRAP_COOLDOWN",
+              hint: "ADMIN_H_SCRAP_COOLDOWN",
+              min: 0,
+              max: 1440,
+              unit: "min",
+            },
           ],
         },
       ],
     },
   ],
-};
+}
