@@ -7,9 +7,7 @@ import {
   nearestVehicle,
   notify,
   Points,
-  progress,
 } from "@aicore-fivem/lib/client";
-import { readFinite, readId } from "@aicore-fivem/lib/shared";
 import { Locale } from "common";
 import { EVENTS, readShops, readYards, toOffers } from "common/pawn";
 
@@ -92,20 +90,6 @@ function vehicleNearby(): number | null {
 async function scrap(yardId: string): Promise<void> {
   const vehicle = vehicleNearby();
   if (vehicle === null) return notify(Locale("PAWN_ERR_NO_VEHICLE"), "warning");
-  const started = await callAction(
-    EVENTS.scrapStart,
-    [yardId, VehToNet(vehicle)],
-    FAR,
-  );
-  const token = readId(started?.token);
-  const seconds = readFinite(started?.seconds);
-  if (token === null || seconds === null) return;
-  TaskTurnPedToFaceEntity(cache.ped, vehicle, 1000);
-  const done = await progress({
-    label: Locale("PAWN_SCRAPPING"),
-    duration: seconds * 1000,
-    anim: { dict: "mini@repair", clip: "fixing_a_player" },
-  });
-  if (!done) return;
-  await callAction(EVENTS.scrapFinish, [token], FAR);
+  // The server runs the progress bar and pays when it ran out.
+  await callAction(EVENTS.scrapStart, [yardId, VehToNet(vehicle)], FAR);
 }

@@ -348,6 +348,8 @@ const CORE = {
 	clientCancelProgressEvent: "ai-core:client:cancelProgress",
 	clientDefinitionsEvent: "ai-core:client:definitions",
 	vehicleTypeCallback: "ai-core:vehicleType",
+	progressForCallback: "ai-core:progressFor",
+	progressForCancelEvent: "ai-core:client:progressForCancel",
 	interactionStateKey: "ai:interaction",
 	charactersCallback: "ai-core:characters",
 	createCharacterCallback: "ai-core:createCharacter",
@@ -482,10 +484,25 @@ function onClientCallback(name, first, second) {
 	});
 }
 const pending = new Map();
+let nextId = 0;
 onNet(responseEvent(resource$1), (id, ok, result) => {
 	let entry = typeof id == "number" ? pending.get(id) : void 0;
 	entry && entry.source === Number(globalThis.source) && (pending.delete(id), clearTimeout(entry.timer), ok === !0 ? entry.resolve(result) : entry.reject(Error("client callback failed")));
 });
+function triggerClientCallback(name, source, args = [], timeoutMs = 3e4) {
+	let id = ++nextId;
+	return new Promise((resolve, reject) => {
+		let timer = setTimeout(() => {
+			pending.delete(id), reject(Error(`client callback ${name} timed out for ${source}`));
+		}, timeoutMs);
+		pending.set(id, {
+			source,
+			resolve,
+			reject,
+			timer
+		}), emitNet(requestEvent(name), source, resource$1, id, ...args);
+	});
+}
 // ../../../packages/lib/src/server/admin/patch.ts
 function toPatch(value) {
 	if (!isRecord(value) || typeof value.file != "string") return null;
@@ -1137,35 +1154,24 @@ var PlayerMap = class extends Map {
 		for (let [key, until] of this.until) until <= now && this.until.delete(key);
 		this.sweepAt = Math.max(64, this.until.size * 2);
 	}
-}, PendingActions = class {
-	actions = new PlayerMap();
-	minRatio;
-	next = 0;
-	constructor(options = {}) {
-		this.minRatio = options.minRatio ?? .8, on(CORE.playerUnloadedEvent, (source) => this.actions.delete(source));
-	}
-	start(source, data, durationMs) {
-		return this.next = this.next >= 2147483647 ? 1 : this.next + 1, this.actions.set(source, {
-			token: this.next,
-			data,
-			startedAt: GetGameTimer(),
-			durationMs
-		}), this.next;
-	}
-	take(source, token) {
-		let action = this.actions.get(source);
-		return !action || action.token !== token ? null : (this.actions.delete(source), GetGameTimer() - action.startedAt >= action.durationMs * this.minRatio ? action.data : null);
-	}
-	peek(source) {
-		return this.actions.get(source)?.data ?? null;
-	}
-	cancel(source) {
-		this.actions.delete(source);
-	}
-	get size() {
-		return this.actions.size;
-	}
 };
+// ../../../packages/lib/src/server/progressFor.ts
+const running = new PlayerMap({ onDrop: (_source, settle) => settle(!1) });
+on(CORE.playerUnloadedEvent, (source) => {
+	let settle = running.get(source);
+	settle && settle(!1);
+});
+function progressFor(source, options) {
+	let previous = running.get(source);
+	previous && (previous(!1), emitNet(CORE.progressForCancelEvent, source));
+	let { minRatio = .8, ...bar } = options, startedAt = GetGameTimer();
+	return new Promise((resolve) => {
+		let done = !1, settle = (ok) => {
+			done || (done = !0, running.get(source) === settle && running.delete(source), resolve(ok));
+		};
+		running.set(source, settle), triggerClientCallback(CORE.progressForCallback, source, [bar], bar.duration + 15e3).then((answer) => settle(answer === !0 && GetGameTimer() - startedAt >= bar.duration * minRatio), () => settle(!1));
+	});
+}
 // ../../../packages/lib/src/server/command.ts
 const resource = GetCurrentResourceName();
 createLogger(resource), new class {
@@ -1288,8 +1294,7 @@ GetCurrentResourceName(), IsDuplicityVersion();
 const EVENTS = {
 	offers: "ai-pawnshop:offers",
 	sell: "ai-pawnshop:sell",
-	scrapStart: "ai-pawnshop:scrapStart",
-	scrapFinish: "ai-pawnshop:scrapFinish"
+	scrapStart: "ai-pawnshop:scrapStart"
 }, point = (v) => {
 	let p = record(v);
 	return {
@@ -1741,7 +1746,7 @@ aiLogChannels({
 		}
 	}), { ok: !0 };
 });
-const scraps = new PendingActions(), scrapCooldowns = new KeyedCooldowns();
+const scrapCooldowns = new KeyedCooldowns();
 function scrappable(vehicle) {
 	return GetEntityPopulationType(vehicle) === 7 || optionalExport("ai-vehicles")?.GetVehicleIdByEntity(vehicle) != null ? "PAWN_ERR_OWNED" : null;
 }
@@ -1759,30 +1764,28 @@ onClientCallback(EVENTS.scrapStart, {
 	if (!vehicle) return fail("PAWN_ERR_NO_VEHICLE");
 	if (GetVehiclePedIsIn(GetPlayerPed(String(source)), !1) === vehicle || GetPedInVehicleSeat(vehicle, -1) !== 0) return fail("PAWN_ERR_EMPTY_IT");
 	let refused = scrappable(vehicle);
-	if (refused) return fail(refused);
-	let seconds = settings.value.scrapSeconds;
-	return {
-		ok: !0,
-		token: scraps.start(source, {
-			yard: id,
-			vehicle
-		}, seconds * 1e3),
-		seconds
-	};
-}), onClientCallback(EVENTS.scrapFinish, {
-	args: oneArg(readId),
-	lock: !0
-}, (source, token) => {
-	let scrap = scraps.take(source, token), yard = scrap ? yards.value.get(scrap.yard) : void 0, charId = online.character(source)?.id;
-	if (!scrap || !yard || charId === void 0 || !DoesEntityExist(scrap.vehicle) || !isNear(source, yard.coords, 12) || !isNear(source, entityCoords(scrap.vehicle), 8)) return fail("PAWN_ERR_FAR");
-	if (GetPedInVehicleSeat(scrap.vehicle, -1) !== 0) return fail("PAWN_ERR_EMPTY_IT");
-	DeleteEntity(scrap.vehicle), scrapCooldowns.start(charId, settings.value.scrapCooldown * 6e4);
-	for (let reward of yard.rewards) {
-		let count = reward.min + Math.floor(Math.random() * (reward.max - reward.min + 1));
-		count > 0 && inventory.addItem(source, reward.name, count);
-	}
-	return notify(source, Locale("PAWN_SCRAPPED"), "success"), aiLog("scrap", "scrapped a vehicle", {
-		source,
-		metadata: { yard: yard.id }
-	}), { ok: !0 };
+	return refused ? fail(refused) : (takeApart(source, yard.id, vehicle), { ok: !0 });
 });
+async function takeApart(source, yardId, vehicle) {
+	let done = await progressFor(source, {
+		label: Locale("PAWN_SCRAPPING"),
+		duration: settings.value.scrapSeconds * 1e3,
+		anim: {
+			dict: "mini@repair",
+			clip: "fixing_a_player"
+		},
+		face: entityCoords(vehicle)
+	}), yard = yards.value.get(yardId), charId = online.character(source)?.id;
+	if (done && yard && charId !== void 0 && DoesEntityExist(vehicle) && isNear(source, yard.coords, 12) && isNear(source, entityCoords(vehicle), 8)) {
+		if (GetPedInVehicleSeat(vehicle, -1) !== 0) return notify(source, Locale("PAWN_ERR_EMPTY_IT"), "error");
+		DeleteEntity(vehicle), scrapCooldowns.start(charId, settings.value.scrapCooldown * 6e4);
+		for (let reward of yard.rewards) {
+			let count = reward.min + Math.floor(Math.random() * (reward.max - reward.min + 1));
+			count > 0 && inventory.addItem(source, reward.name, count);
+		}
+		notify(source, Locale("PAWN_SCRAPPED"), "success"), aiLog("scrap", "scrapped a vehicle", {
+			source,
+			metadata: { yard: yard.id }
+		});
+	}
+}

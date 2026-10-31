@@ -16,10 +16,8 @@ export const EVENTS = {
   offers: "ai-pawnshop:offers",
   /** Callback: (shopId, item, count) -> { ok } sells items. */
   sell: "ai-pawnshop:sell",
-  /** Callback: (yardId, netId) -> { ok, token, seconds } starts taking a vehicle apart. */
+  /** Callback: (yardId, netId) -> { ok } starts taking a vehicle apart (the server runs the progress bar and pays). */
   scrapStart: "ai-pawnshop:scrapStart",
-  /** Callback: (token) -> { ok } the progress ran out: the vehicle goes, materials arrive. */
-  scrapFinish: "ai-pawnshop:scrapFinish",
 } as const;
 
 type Point = { x: number; y: number; z: number };

@@ -10,7 +10,7 @@ import {
   onClientCallback,
   online,
   optionalExport,
-  PendingActions,
+  progressFor,
   resourceExport,
   vehicleNearPlayer,
 } from "@aicore-fivem/lib/server";
@@ -94,9 +94,6 @@ onClientCallback(
   },
 );
 
-/** Vehicles being taken apart (one per player, token + 80% of the time). */
-const scraps = new PendingActions<{ yard: string; vehicle: number }>();
-
 /** When each character may scrap again, by character id so a reconnect does not reset it. */
 const scrapCooldowns = new KeyedCooldowns();
 
@@ -137,42 +134,49 @@ onClientCallback(
       return fail("PAWN_ERR_EMPTY_IT");
     const refused = scrappable(vehicle);
     if (refused) return fail(refused);
-    const seconds = settings.value.scrapSeconds;
-    const token = scraps.start(source, { yard: id, vehicle }, seconds * 1000);
-    return { ok: true, token, seconds };
-  },
-);
-
-onClientCallback(
-  EVENTS.scrapFinish,
-  { args: oneArg(readId), lock: true },
-  (source, token) => {
-    const scrap = scraps.take(source, token);
-    const yard = scrap ? yards.value.get(scrap.yard) : undefined;
-    const charId = online.character(source)?.id;
-    if (
-      !scrap ||
-      !yard ||
-      charId === undefined ||
-      !DoesEntityExist(scrap.vehicle) ||
-      !isNear(source, yard.coords, 12) ||
-      !isNear(source, entityCoords(scrap.vehicle), 8)
-    )
-      return fail("PAWN_ERR_FAR");
-    if (GetPedInVehicleSeat(scrap.vehicle, -1) !== 0)
-      return fail("PAWN_ERR_EMPTY_IT");
-    DeleteEntity(scrap.vehicle);
-    scrapCooldowns.start(charId, settings.value.scrapCooldown * 60_000);
-    for (const reward of yard.rewards) {
-      const count =
-        reward.min + Math.floor(Math.random() * (reward.max - reward.min + 1));
-      if (count > 0) inventory.addItem(source, reward.name, count);
-    }
-    notify(source, Locale("PAWN_SCRAPPED"), "success");
-    aiLog("scrap", "scrapped a vehicle", {
-      source,
-      metadata: { yard: yard.id },
-    });
+    void takeApart(source, yard.id, vehicle);
     return { ok: true };
   },
 );
+
+/**
+ * The scrapping itself: the server-timed progress bar facing the vehicle (a second start replaces the first), then
+ * the vehicle goes and the materials arrive if the player is still at the yard and the vehicle still empty.
+ */
+async function takeApart(
+  source: number,
+  yardId: string,
+  vehicle: number,
+): Promise<void> {
+  const done = await progressFor(source, {
+    label: Locale("PAWN_SCRAPPING"),
+    duration: settings.value.scrapSeconds * 1000,
+    anim: { dict: "mini@repair", clip: "fixing_a_player" },
+    face: entityCoords(vehicle),
+  });
+  const yard = yards.value.get(yardId);
+  const charId = online.character(source)?.id;
+  if (
+    !done ||
+    !yard ||
+    charId === undefined ||
+    !DoesEntityExist(vehicle) ||
+    !isNear(source, yard.coords, 12) ||
+    !isNear(source, entityCoords(vehicle), 8)
+  )
+    return;
+  if (GetPedInVehicleSeat(vehicle, -1) !== 0)
+    return notify(source, Locale("PAWN_ERR_EMPTY_IT"), "error");
+  DeleteEntity(vehicle);
+  scrapCooldowns.start(charId, settings.value.scrapCooldown * 60_000);
+  for (const reward of yard.rewards) {
+    const count =
+      reward.min + Math.floor(Math.random() * (reward.max - reward.min + 1));
+    if (count > 0) inventory.addItem(source, reward.name, count);
+  }
+  notify(source, Locale("PAWN_SCRAPPED"), "success");
+  aiLog("scrap", "scrapped a vehicle", {
+    source,
+    metadata: { yard: yard.id },
+  });
+}
