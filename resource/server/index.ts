@@ -25,8 +25,8 @@ import { Locale } from "common";
 import {
   EVENTS,
   readSettings,
-  readShops,
-  readYards,
+  readShop,
+  readYard,
   type Offer,
 } from "common/pawn";
 import { pawnSchema } from "./schema";
@@ -34,8 +34,8 @@ import { pawnSchema } from "./schema";
 const core = resourceExport("ai-core");
 const panel = new AdminPanel(pawnSchema);
 const settings = panel.view("settings", readSettings);
-const shops = panel.view("shops", readShops);
-const yards = panel.view("scrapyards", readYards);
+const shops = panel.records("shops", readShop);
+const yards = panel.records("scrapyards", readYard);
 aiLogChannels({ pawn: {}, scrap: {} });
 
 /** What the shop buys that the player carries, summed over stacks (the sell menu's one snapshot). */
@@ -43,7 +43,7 @@ onClientCallback(
   EVENTS.offers,
   { args: oneArg((v) => readText(v, 64)) },
   (source, id) => {
-    const shop = shops.value.get(id);
+    const shop = shops.get(id);
     if (!shop || !isNear(source, shop.coords, 3)) return fail("PAWN_ERR_FAR");
     const offers = new Map<string, Offer>();
     for (const stack of inventory.getItems(source)) {
@@ -76,7 +76,7 @@ onClientCallback(
     lock: true,
   },
   (source, id, item, count) => {
-    const shop = shops.value.get(id);
+    const shop = shops.get(id);
     if (!shop || !isNear(source, shop.coords, 3)) return fail("PAWN_ERR_FAR");
     const price = shop.prices.get(item);
     if (price === undefined) return fail("PAWN_ERR_NOT_BUYING");
@@ -120,7 +120,7 @@ onClientCallback(
     lock: true,
   },
   (source, id, netId) => {
-    const yard = yards.value.get(id);
+    const yard = yards.get(id);
     const charId = online.character(source)?.id;
     if (!yard || charId === undefined || !isNear(source, yard.coords, 12))
       return fail("PAWN_ERR_FAR");
@@ -154,7 +154,7 @@ async function takeApart(
     anim: { dict: "mini@repair", clip: "fixing_a_player" },
     face: entityCoords(vehicle),
   });
-  const yard = yards.value.get(yardId);
+  const yard = yards.get(yardId);
   const charId = online.character(source)?.id;
   if (
     !done ||

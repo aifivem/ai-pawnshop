@@ -67,25 +67,21 @@ export interface Shop {
   prices: Map<string, number>;
 }
 
-export function readShops(raw: unknown): Map<string, Shop> {
-  const out = new Map<string, Shop>();
-  for (const [id, value] of Object.entries(record(raw))) {
-    const v = record(value);
-    const prices = new Map<string, number>();
-    for (const row of list(v.items))
-      if (typeof row.name === "string")
-        prices.set(row.name, int(row.price, 0, 0));
-    out.set(id, {
-      ped: readPlacePed(v.ped),
-      id,
-      label: str(v.label, id, 48),
-      coords: point(v.coords),
-      blip: bool(v.blip, true),
-      blipStyle: blipStyle(v.blipStyle, SHOP_BLIP),
-      prices,
-    });
-  }
-  return out;
+/** One shop record (`panel.records` / `RecordObjects` reader). */
+export function readShop(id: string, v: Record<string, unknown>): Shop {
+  const prices = new Map<string, number>();
+  for (const row of list(v.items))
+    if (typeof row.name === "string")
+      prices.set(row.name, int(row.price, 0, 0));
+  return {
+    ped: readPlacePed(v.ped),
+    id,
+    label: str(v.label, id, 48),
+    coords: point(v.coords),
+    blip: bool(v.blip, true),
+    blipStyle: blipStyle(v.blipStyle, SHOP_BLIP),
+    prices,
+  };
 }
 
 export interface Yard {
@@ -97,27 +93,21 @@ export interface Yard {
   rewards: Array<{ name: string; min: number; max: number }>;
 }
 
-export function readYards(raw: unknown): Map<string, Yard> {
-  const out = new Map<string, Yard>();
-  for (const [id, value] of Object.entries(record(raw))) {
-    const v = record(value);
-    const rewards = list(v.rewards).flatMap((r) => {
-      if (typeof r.name !== "string") return [];
-      const min = int(r.min, 1, 0, 100);
-      return [
-        { name: r.name, min, max: Math.max(min, int(r.max, min, 0, 100)) },
-      ];
-    });
-    out.set(id, {
-      id,
-      label: str(v.label, id, 48),
-      coords: point(v.coords),
-      blip: bool(v.blip, true),
-      blipStyle: blipStyle(v.blipStyle, YARD_BLIP),
-      rewards,
-    });
-  }
-  return out;
+/** One scrapyard record (`panel.records` / `RecordObjects` reader). */
+export function readYard(id: string, v: Record<string, unknown>): Yard {
+  const rewards = list(v.rewards).flatMap((r) => {
+    if (typeof r.name !== "string") return [];
+    const min = int(r.min, 1, 0, 100);
+    return [{ name: r.name, min, max: Math.max(min, int(r.max, min, 0, 100)) }];
+  });
+  return {
+    id,
+    label: str(v.label, id, 48),
+    coords: point(v.coords),
+    blip: bool(v.blip, true),
+    blipStyle: blipStyle(v.blipStyle, YARD_BLIP),
+    rewards,
+  };
 }
 
 export interface Offer {

@@ -62,7 +62,7 @@ const oneArg = (read) => ([value]) => {
 }, fail = (error) => ({
 	ok: !1,
 	error
-}), BLIP_STYLE_FIELDS = {
+}), isPublic = (rule) => rule.jobs.length === 0 && rule.gangs.length === 0, BLIP_STYLE_FIELDS = {
 	sprite: {
 		type: "number",
 		min: 0,
@@ -358,6 +358,7 @@ const CORE = {
 }, ADMIN = {
 	ace: "ai.admin",
 	openCallback: "ai-core:admin:open",
+	panelDataCallback: "ai-core:admin:panelData",
 	applyCallback: "ai-core:admin:apply",
 	closeEvent: "ai-core:admin:close",
 	showEvent: "ai-core:admin:show",
@@ -843,7 +844,7 @@ var AdminPanel = class {
 	constructor(schema) {
 		this.schema = schema;
 		for (let [name, spec] of Object.entries(schema.files)) this.load(name, spec);
-		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges), { rate: {
+		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelSummary", () => this.summary()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges), { rate: {
 			count: 4,
 			windowMs: 1e4
 		} }), setImmediate(() => core$15.RegisterAdminPanel(this.resource));
@@ -872,6 +873,27 @@ var AdminPanel = class {
 			schema: this.schema,
 			texts: loadLocaleTexts(),
 			data: clone(Object.fromEntries(this.data))
+		};
+	}
+	summary() {
+		let data = {}, index = {};
+		for (let [file, spec] of Object.entries(this.schema.files)) {
+			let content = this.data.get(file);
+			if (spec.kind !== "records") {
+				data[file] = clone(content ?? {});
+				continue;
+			}
+			let labels = {};
+			for (let [key, record] of Object.entries(content ?? {})) labels[key] = labelOf(record, spec.labelPath) ?? key;
+			index[file] = labels;
+		}
+		return {
+			resource: this.resource,
+			schema: this.schema,
+			texts: loadLocaleTexts(),
+			data,
+			loaded: !1,
+			index
 		};
 	}
 	apply(admin, raw) {
@@ -957,6 +979,15 @@ var AdminPanel = class {
 		this.data.set(name, data), (filled || raw === null || !file.hasSchemaRef()) && file.write(data);
 	}
 };
+function labelOf(record, path) {
+	if (!path) return null;
+	let at = record;
+	for (let part of path.split(".")) {
+		if (typeof at != "object" || !at) return null;
+		at = at[part];
+	}
+	return typeof at == "string" && at !== "" ? at : null;
+}
 // ../../../packages/lib/src/server/log.ts
 function aiLog(channel, message, options) {
 	optionalExport("ai-core")?.Log(channel, message, options);
@@ -1086,6 +1117,20 @@ var OnlinePlayers = class {
 	onDutyIn(source, jobs) {
 		let duty = this.dutyJob(source);
 		return duty !== null && jobs.includes(duty);
+	}
+	allows(source, rule) {
+		if (isPublic(rule)) return !0;
+		let min = (name) => rule.grades[name] ?? 0;
+		for (let gang of rule.gangs) {
+			let grade = this.gangGrade(source, gang);
+			if (grade !== null && grade >= min(gang)) return !0;
+		}
+		let duty = rule.onDuty ? this.dutyJob(source) : null;
+		for (let job of rule.jobs) {
+			let grade = this.jobGrade(source, job);
+			if (grade !== null && grade >= min(job) && (!rule.onDuty || duty === job)) return !0;
+		}
+		return !1;
 	}
 	countOnDuty(jobs) {
 		this.start();
@@ -1326,45 +1371,37 @@ function readSettings(raw) {
 		scrapSeconds: int(v.scrapSeconds, 30, 1, 600)
 	};
 }
-function readShops(raw) {
-	let out = new Map();
-	for (let [id, value] of Object.entries(record(raw))) {
-		let v = record(value), prices = new Map();
-		for (let row of list(v.items)) typeof row.name == "string" && prices.set(row.name, int(row.price, 0, 0));
-		out.set(id, {
-			ped: readPlacePed(v.ped),
-			id,
-			label: str(v.label, id, 48),
-			coords: point(v.coords),
-			blip: bool(v.blip, !0),
-			blipStyle: blipStyle(v.blipStyle, SHOP_BLIP),
-			prices
-		});
-	}
-	return out;
+function readShop(id, v) {
+	let prices = new Map();
+	for (let row of list(v.items)) typeof row.name == "string" && prices.set(row.name, int(row.price, 0, 0));
+	return {
+		ped: readPlacePed(v.ped),
+		id,
+		label: str(v.label, id, 48),
+		coords: point(v.coords),
+		blip: bool(v.blip, !0),
+		blipStyle: blipStyle(v.blipStyle, SHOP_BLIP),
+		prices
+	};
 }
-function readYards(raw) {
-	let out = new Map();
-	for (let [id, value] of Object.entries(record(raw))) {
-		let v = record(value), rewards = list(v.rewards).flatMap((r) => {
-			if (typeof r.name != "string") return [];
-			let min = int(r.min, 1, 0, 100);
-			return [{
-				name: r.name,
-				min,
-				max: Math.max(min, int(r.max, min, 0, 100))
-			}];
-		});
-		out.set(id, {
-			id,
-			label: str(v.label, id, 48),
-			coords: point(v.coords),
-			blip: bool(v.blip, !0),
-			blipStyle: blipStyle(v.blipStyle, YARD_BLIP),
-			rewards
-		});
-	}
-	return out;
+function readYard(id, v) {
+	let rewards = list(v.rewards).flatMap((r) => {
+		if (typeof r.name != "string") return [];
+		let min = int(r.min, 1, 0, 100);
+		return [{
+			name: r.name,
+			min,
+			max: Math.max(min, int(r.max, min, 0, 100))
+		}];
+	});
+	return {
+		id,
+		label: str(v.label, id, 48),
+		coords: point(v.coords),
+		blip: bool(v.blip, !0),
+		blipStyle: blipStyle(v.blipStyle, YARD_BLIP),
+		rewards
+	};
 }
 // resource/server/schema.ts
 const KEY = "^[a-z0-9_]{2,48}$", BLIP_STYLE = {
@@ -1701,12 +1738,12 @@ const KEY = "^[a-z0-9_]{2,48}$", BLIP_STYLE = {
 			}]
 		}
 	]
-}, core = resourceExport("ai-core"), panel = new AdminPanel(pawnSchema), settings = panel.view("settings", readSettings), shops = panel.view("shops", readShops), yards = panel.view("scrapyards", readYards);
+}, core = resourceExport("ai-core"), panel = new AdminPanel(pawnSchema), settings = panel.view("settings", readSettings), shops = panel.records("shops", readShop), yards = panel.records("scrapyards", readYard);
 aiLogChannels({
 	pawn: {},
 	scrap: {}
 }), onClientCallback(EVENTS.offers, { args: oneArg((v) => readText(v, 64)) }, (source, id) => {
-	let shop = shops.value.get(id);
+	let shop = shops.get(id);
 	if (!shop || !isNear(source, shop.coords, 3)) return fail("PAWN_ERR_FAR");
 	let offers = new Map();
 	for (let stack of inventory.getItems(source)) {
@@ -1735,7 +1772,7 @@ aiLogChannels({
 	},
 	lock: !0
 }, (source, id, item, count) => {
-	let shop = shops.value.get(id);
+	let shop = shops.get(id);
 	if (!shop || !isNear(source, shop.coords, 3)) return fail("PAWN_ERR_FAR");
 	let price = shop.prices.get(item);
 	if (price === void 0) return fail("PAWN_ERR_NOT_BUYING");
@@ -1760,7 +1797,7 @@ onClientCallback(EVENTS.scrapStart, {
 	},
 	lock: !0
 }, (source, id, netId) => {
-	let yard = yards.value.get(id), charId = online.character(source)?.id;
+	let yard = yards.get(id), charId = online.character(source)?.id;
 	if (!yard || charId === void 0 || !isNear(source, yard.coords, 12)) return fail("PAWN_ERR_FAR");
 	if (!scrapCooldowns.ready(charId)) return fail("PAWN_ERR_COOLDOWN");
 	let vehicle = vehicleNearPlayer(source, netId, { metres: 6 });
@@ -1778,7 +1815,7 @@ async function takeApart(source, yardId, vehicle) {
 			clip: "fixing_a_player"
 		},
 		face: entityCoords(vehicle)
-	}), yard = yards.value.get(yardId), charId = online.character(source)?.id;
+	}), yard = yards.get(yardId), charId = online.character(source)?.id;
 	if (done && yard && charId !== void 0 && DoesEntityExist(vehicle) && isNear(source, yard.coords, 12) && isNear(source, entityCoords(vehicle), 8)) {
 		if (GetPedInVehicleSeat(vehicle, -1) !== 0) return notify(source, Locale("PAWN_ERR_EMPTY_IT"), "error");
 		DeleteEntity(vehicle), scrapCooldowns.start(charId, settings.value.scrapCooldown * 6e4);

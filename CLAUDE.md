@@ -16,4 +16,4 @@ Pawnshops that buy items at panel prices, and scrapyards that take unregistered 
 
 ## Entry points
 
-- Sales and scrapping `resource/server/index.ts`; menus and interaction points (lib `Points` with blips) `resource/client/index.ts`.
+- Sales and scrapping `resource/server/index.ts`; menus and interaction points (lib `Points` with blips, kept per record by `RecordObjects`) `resource/client/index.ts`.
