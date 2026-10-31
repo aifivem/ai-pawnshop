@@ -8,6 +8,11 @@
       "z": 48.2
     },
     "blip": true,
+    "blipStyle": {
+      "sprite": 380,
+      "color": 9,
+      "scale": 0.7
+    },
     "rewards": [
       {
         "name": "scrapmetal",

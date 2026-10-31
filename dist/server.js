@@ -1307,11 +1307,11 @@ const EVENTS = {
 	};
 }, list = (v) => Array.isArray(v) ? v.map(record) : [], SHOP_BLIP = {
 	sprite: 431,
-	color: 0,
+	color: 5,
 	scale: .7
 }, YARD_BLIP = {
 	sprite: 380,
-	color: 0,
+	color: 9,
 	scale: .7
 }, blipStyle = (v, d) => readBlipStyle(record(v), {
 	sprite: d.sprite,

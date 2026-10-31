@@ -32,8 +32,8 @@ export interface BlipStyle {
   color: number;
   scale: number;
 }
-export const SHOP_BLIP: BlipStyle = { sprite: 431, color: 0, scale: 0.7 };
-export const YARD_BLIP: BlipStyle = { sprite: 380, color: 0, scale: 0.7 };
+export const SHOP_BLIP: BlipStyle = { sprite: 431, color: 5, scale: 0.7 };
+export const YARD_BLIP: BlipStyle = { sprite: 380, color: 9, scale: 0.7 };
 const blipStyle = (v: unknown, d: BlipStyle): BlipStyle => {
   const b = record(v);
   return readBlipStyle(b, { sprite: d.sprite, color: d.color, scale: d.scale });

@@ -8,26 +8,36 @@
       "z": 103.13
     },
     "blip": true,
+    "blipStyle": {
+      "sprite": 431,
+      "color": 5,
+      "scale": 0.7
+    },
     "items": [
       {
-        "name": "rolex",
-        "price": 180
-      },
-      {
         "name": "goldchain",
-        "price": 120
+        "price": 75
       },
       {
         "name": "diamond_ring",
-        "price": 250
+        "price": 75
       },
       {
-        "name": "goldbar",
-        "price": 900
+        "name": "rolex",
+        "price": 75
       }
     ]
   },
   "diving_delperro": {
+    "ped": {
+      "model": "a_m_m_salton_01",
+      "coords": {
+        "x": -1684.13,
+        "y": -1068.91,
+        "z": 13.15,
+        "heading": 100
+      }
+    },
     "label": "Del Perro Diving Shop",
     "coords": {
       "x": -1684.13,
