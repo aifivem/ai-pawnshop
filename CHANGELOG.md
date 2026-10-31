@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/aifivem/ai-pawnshop/compare/v0.1.1...v0.1.2) (2026-10-31)
+
+
+### Miscellaneous Chores
+
+* rebuild with the current lib ([0d87af0](https://github.com/aifivem/ai-pawnshop/commit/0d87af076c94a9410a8f879e14d1daf7fd88abc9))
+
 ## [0.1.1](https://github.com/aifivem/ai-pawnshop/compare/v0.1.0...v0.1.1) (2026-10-31)
 
 
