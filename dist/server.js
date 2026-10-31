@@ -62,7 +62,7 @@ const oneArg = (read) => ([value]) => {
 }, fail = (error) => ({
 	ok: !1,
 	error
-}), isPublic = (rule) => rule.jobs.length === 0 && rule.gangs.length === 0, BLIP_STYLE_FIELDS = {
+}), randomInt = (min, max) => min + Math.floor(Math.random() * (max - min + 1)), isPublic = (rule) => rule.jobs.length === 0 && rule.gangs.length === 0, BLIP_STYLE_FIELDS = {
 	sprite: {
 		type: "number",
 		min: 0,
@@ -348,6 +348,8 @@ const CORE = {
 	vehicleTypeCallback: "ai-core:vehicleType",
 	interactionStateKey: "ai:interaction",
 	pvpStateKey: "ai:pvp",
+	medicalStateKey: "ai:medical",
+	clientDeadEvent: "ai-core:client:dead",
 	charactersCallback: "ai-core:characters",
 	createCharacterCallback: "ai-core:createCharacter",
 	deleteCharacterCallback: "ai-core:deleteCharacter",
@@ -421,6 +423,10 @@ function entityCoords(entity) {
 		y,
 		z
 	};
+}
+function vehicleOf(source, options = {}) {
+	let ped = GetPlayerPed(String(source)), vehicle = GetVehiclePedIsIn(ped, !1);
+	return !vehicle || !options.driver || GetPedInVehicleSeat(vehicle, -1) === ped ? vehicle : 0;
 }
 function isNear(source, point, metres) {
 	let [x = 0, y = 0, z = 0] = GetEntityCoords(GetPlayerPed(String(source))), dx = x - point.x, dy = y - point.y, dz = z - point.z;
@@ -1092,6 +1098,9 @@ var OnlinePlayers = class {
 	}
 	character(source) {
 		return this.start(), this.players.get(source)?.character ?? null;
+	}
+	charId(source) {
+		return this.start(), this.players.get(source)?.character.id;
 	}
 	name(source, options = {}) {
 		let c = this.character(source);
@@ -1820,12 +1829,12 @@ onClientCallback(EVENTS.scrapStart, {
 	},
 	lock: !0
 }, (source, id, netId) => {
-	let yard = yards.get(id), charId = online.character(source)?.id;
+	let yard = yards.get(id), charId = online.charId(source);
 	if (!yard || charId === void 0 || !isNear(source, yard.coords, 12)) return fail("PAWN_ERR_FAR");
 	if (!scrapCooldowns.ready(charId)) return fail("PAWN_ERR_COOLDOWN");
 	let vehicle = vehicleNearPlayer(source, netId, { metres: 6 });
 	if (!vehicle) return fail("PAWN_ERR_NO_VEHICLE");
-	if (GetVehiclePedIsIn(GetPlayerPed(String(source)), !1) === vehicle || GetPedInVehicleSeat(vehicle, -1) !== 0) return fail("PAWN_ERR_EMPTY_IT");
+	if (vehicleOf(source) === vehicle || GetPedInVehicleSeat(vehicle, -1) !== 0) return fail("PAWN_ERR_EMPTY_IT");
 	let refused = scrappable(vehicle);
 	return refused ? fail(refused) : (takeApart(source, yard.id, vehicle), { ok: !0 });
 });
@@ -1838,12 +1847,12 @@ async function takeApart(source, yardId, vehicle) {
 			clip: "fixing_a_player"
 		},
 		face: entityCoords(vehicle)
-	}), yard = yards.get(yardId), charId = online.character(source)?.id;
+	}), yard = yards.get(yardId), charId = online.charId(source);
 	if (done && yard && charId !== void 0 && DoesEntityExist(vehicle) && isNear(source, yard.coords, 12) && isNear(source, entityCoords(vehicle), 8)) {
 		if (GetPedInVehicleSeat(vehicle, -1) !== 0) return notify(source, Locale("PAWN_ERR_EMPTY_IT"), "error");
 		DeleteEntity(vehicle), scrapCooldowns.start(charId, settings.value.scrapCooldown * 6e4);
 		for (let reward of yard.rewards) {
-			let count = reward.min + Math.floor(Math.random() * (reward.max - reward.min + 1));
+			let count = randomInt(reward.min, reward.max);
 			count > 0 && inventory.addItem(source, reward.name, count);
 		}
 		notify(source, Locale("PAWN_SCRAPPED"), "success"), aiLog("scrap", "scrapped a vehicle", {

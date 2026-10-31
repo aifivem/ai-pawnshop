@@ -13,10 +13,12 @@ import {
   progressFor,
   resourceExport,
   vehicleNearPlayer,
+  vehicleOf,
 } from "@aicore-fivem/lib/server";
 import {
   fail,
   oneArg,
+  randomInt,
   readId,
   readInt,
   readText,
@@ -121,16 +123,13 @@ onClientCallback(
   },
   (source, id, netId) => {
     const yard = yards.get(id);
-    const charId = online.character(source)?.id;
+    const charId = online.charId(source);
     if (!yard || charId === undefined || !isNear(source, yard.coords, 12))
       return fail("PAWN_ERR_FAR");
     if (!scrapCooldowns.ready(charId)) return fail("PAWN_ERR_COOLDOWN");
     const vehicle = vehicleNearPlayer(source, netId, { metres: 6 });
     if (!vehicle) return fail("PAWN_ERR_NO_VEHICLE");
-    if (
-      GetVehiclePedIsIn(GetPlayerPed(String(source)), false) === vehicle ||
-      GetPedInVehicleSeat(vehicle, -1) !== 0
-    )
+    if (vehicleOf(source) === vehicle || GetPedInVehicleSeat(vehicle, -1) !== 0)
       return fail("PAWN_ERR_EMPTY_IT");
     const refused = scrappable(vehicle);
     if (refused) return fail(refused);
@@ -155,7 +154,7 @@ async function takeApart(
     face: entityCoords(vehicle),
   });
   const yard = yards.get(yardId);
-  const charId = online.character(source)?.id;
+  const charId = online.charId(source);
   if (
     !done ||
     !yard ||
@@ -170,8 +169,7 @@ async function takeApart(
   DeleteEntity(vehicle);
   scrapCooldowns.start(charId, settings.value.scrapCooldown * 60_000);
   for (const reward of yard.rewards) {
-    const count =
-      reward.min + Math.floor(Math.random() * (reward.max - reward.min + 1));
+    const count = randomInt(reward.min, reward.max);
     if (count > 0) inventory.addItem(source, reward.name, count);
   }
   notify(source, Locale("PAWN_SCRAPPED"), "success");
