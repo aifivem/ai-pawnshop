@@ -1,5 +1,5 @@
-import { AdminWorld, Points } from "@aicore-fivem/lib/client";
-import { RecordObjects } from "@aicore-fivem/lib/shared";
+import { AdminWorld, Points } from "@aifivem/lib/client";
+import { RecordObjects } from "@aifivem/lib/shared";
 import { Locale } from "common";
 import { readShop, readYard } from "common/pawn";
 import { pawn, scrap } from "./actions";

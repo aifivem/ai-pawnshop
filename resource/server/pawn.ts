@@ -4,8 +4,8 @@ import {
   isNear,
   notify,
   onClientCallback,
-} from "@aicore-fivem/lib/server";
-import { fail, oneArg, readInt, readText } from "@aicore-fivem/lib/shared";
+} from "@aifivem/lib/server";
+import { fail, oneArg, readInt, readText } from "@aifivem/lib/shared";
 import { Locale } from "common";
 import { EVENTS, type Offer } from "common/pawn";
 import { core, settings, shops } from "./content";

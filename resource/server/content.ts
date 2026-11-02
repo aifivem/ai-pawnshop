@@ -1,4 +1,4 @@
-import { AdminPanel, resourceExport } from "@aicore-fivem/lib/server";
+import { AdminPanel, resourceExport } from "@aifivem/lib/server";
 import { readSettings, readShop, readYard } from "common/pawn";
 import { pawnSchema } from "./schema";
 

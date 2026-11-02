@@ -1,4 +1,4 @@
-import type { FileSpec, TabSpec } from "@aicore-fivem/shared";
+import type { FileSpec, TabSpec } from "@aifivem/shared";
 import { YARD_BLIP } from "common/pawn";
 import { BLIP_STYLE } from "./blip";
 import { KEY } from "./itemKey";
