@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.5](https://github.com/aifivem/ai-pawnshop/compare/v0.1.4...v0.1.5) (2026-11-02)
+
+
+### Documentation
+
+* install from the release zip ([63a2496](https://github.com/aifivem/ai-pawnshop/commit/63a2496d8b9c5a71f18df1bed882cdf2c7548285))
+
+
+### Miscellaneous Chores
+
+* build files are no longer in git, the release zip carries them ([59ee422](https://github.com/aifivem/ai-pawnshop/commit/59ee422693c2e2155aea7da1b1cc53d9aa953187))
+
 ## [0.1.4](https://github.com/aifivem/ai-pawnshop/compare/v0.1.3...v0.1.4) (2026-11-02)
 
 
